@@ -1,0 +1,249 @@
+name: Release Docker Images
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:  # Allow manual trigger
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: true
+        type: string
+      push_to_dockerhub:
+        description: 'Push to Docker Hub'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    name: Build and Release Images
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract versions
+        id: version
+        run: |
+          # Extract versions from .env file
+          PANEL_VERSION=$(grep "^PANEL_VERSION=" .env | cut -d '=' -f2)
+          WINGS_VERSION=$(grep "^WINGS_VERSION=" .env | cut -d '=' -f2)
+
+          # Get release version from tag or input
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            RELEASE_VERSION="${{ inputs.version }}"
+          else
+            RELEASE_VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+
+          # Remove 'v' prefix if present
+          RELEASE_VERSION_NUMBER="${RELEASE_VERSION#v}"
+
+          # Determine if we should push to Docker Hub
+          if [ "${{ github.event_name }}" == "push" ] || ([ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ inputs.push_to_dockerhub }}" == "true" ]); then
+            PUSH_TO_DOCKERHUB="true"
+          else
+            PUSH_TO_DOCKERHUB="false"
+          fi
+
+          echo "panel_version=$PANEL_VERSION" >> $GITHUB_OUTPUT
+          echo "wings_version=$WINGS_VERSION" >> $GITHUB_OUTPUT
+          echo "release_version=$RELEASE_VERSION" >> $GITHUB_OUTPUT
+          echo "release_version_number=$RELEASE_VERSION_NUMBER" >> $GITHUB_OUTPUT
+          echo "push_to_dockerhub=$PUSH_TO_DOCKERHUB" >> $GITHUB_OUTPUT
+
+          echo "Panel version: $PANEL_VERSION"
+          echo "Wings version: $WINGS_VERSION"
+          echo "Release version: $RELEASE_VERSION"
+          echo "Push to Docker Hub: $PUSH_TO_DOCKERHUB"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to Docker Hub
+        if: steps.version.outputs.push_to_dockerhub == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Determine Docker Hub repository
+        id: dockerhub
+        run: |
+          # Extract repository name from GitHub repository
+          REPO_NAME="${{ github.repository }}"
+          # Use lowercase for Docker Hub
+          DOCKERHUB_REPO=$(echo "$REPO_NAME" | tr '[:upper:]' '[:lower:]')
+          echo "repo=$DOCKERHUB_REPO" >> $GITHUB_OUTPUT
+          echo "Docker Hub repository: $DOCKERHUB_REPO"
+
+      - name: Generate image metadata for Panel
+        id: meta-panel
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}/panel
+            ${{ steps.version.outputs.push_to_dockerhub == 'true' && format('{0}/panel', steps.dockerhub.outputs.repo) || '' }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ steps.version.outputs.release_version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.release_version }}
+            type=semver,pattern={{major}},value=${{ steps.version.outputs.release_version }}
+            type=raw,value=latest
+            type=raw,value=${{ steps.version.outputs.panel_version }}
+            type=raw,value={{date 'YYYYMMDD'}}
+          flavor: |
+            latest=auto
+
+      - name: Build and push Panel image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./panel
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta-panel.outputs.tags }}
+          labels: ${{ steps.meta-panel.outputs.labels }}
+          build-args: |
+            PANEL_VERSION=${{ steps.version.outputs.panel_version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Generate image metadata for Wings
+        id: meta-wings
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}/wings
+            ${{ steps.version.outputs.push_to_dockerhub == 'true' && format('{0}/wings', steps.dockerhub.outputs.repo) || '' }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ steps.version.outputs.release_version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.release_version }}
+            type=semver,pattern={{major}},value=${{ steps.version.outputs.release_version }}
+            type=raw,value=latest
+            type=raw,value=${{ steps.version.outputs.wings_version }}
+            type=raw,value={{date 'YYYYMMDD'}}
+          flavor: |
+            latest=auto
+
+      - name: Build and push Wings image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./wings
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta-wings.outputs.tags }}
+          labels: ${{ steps.meta-wings.outputs.labels }}
+          build-args: |
+            WINGS_VERSION=${{ steps.version.outputs.wings_version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Generate release notes
+        id: release-notes
+        run: |
+          PUSH_TO_DOCKERHUB="${{ steps.version.outputs.push_to_dockerhub }}"
+          DOCKERHUB_REPO="${{ steps.dockerhub.outputs.repo }}"
+
+          cat > release_notes.md << 'EOF'
+          ## 🚀 Release ${{ steps.version.outputs.release_version }}
+
+          This release includes Docker images for Pterodactyl Panel and Wings.
+
+          ### 📦 Included Versions
+          - **Panel**: v${{ steps.version.outputs.panel_version }}
+          - **Wings**: v${{ steps.version.outputs.wings_version }}
+
+          ### 🐳 Docker Images
+
+          #### GitHub Container Registry
+
+          ```bash
+          # Panel
+          docker pull ghcr.io/${{ github.repository }}/panel:${{ steps.version.outputs.release_version_number }}
+          docker pull ghcr.io/${{ github.repository }}/panel:latest
+
+          # Wings
+          docker pull ghcr.io/${{ github.repository }}/wings:${{ steps.version.outputs.release_version_number }}
+          docker pull ghcr.io/${{ github.repository }}/wings:latest
+          ```
+          EOF
+
+          if [ "$PUSH_TO_DOCKERHUB" == "true" ]; then
+            echo "" >> release_notes.md
+            echo "          #### Docker Hub" >> release_notes.md
+            echo "" >> release_notes.md
+            echo "          \`\`\`bash" >> release_notes.md
+            echo "          # Panel" >> release_notes.md
+            echo "          docker pull ${DOCKERHUB_REPO}/panel:${{ steps.version.outputs.release_version_number }}" >> release_notes.md
+            echo "          docker pull ${DOCKERHUB_REPO}/panel:latest" >> release_notes.md
+            echo "" >> release_notes.md
+            echo "          # Wings" >> release_notes.md
+            echo "          docker pull ${DOCKERHUB_REPO}/wings:${{ steps.version.outputs.release_version_number }}" >> release_notes.md
+            echo "          docker pull ${DOCKERHUB_REPO}/wings:latest" >> release_notes.md
+            echo "          \`\`\`" >> release_notes.md
+          fi
+
+          cat >> release_notes.md << 'EOF'
+
+          ### 🏗️ Multi-Platform Support
+          These images support the following platforms:
+          - linux/amd64
+          - linux/arm64
+
+          ### 📝 Usage
+
+          Use with docker-compose:
+
+          ```bash
+          docker compose up -d
+          ```
+
+          Or run individually:
+
+          ```bash
+          # Panel
+          docker run -d \
+            --name pterodactyl_panel \
+            -p 80:80 \
+            ghcr.io/${{ github.repository }}/panel:latest
+
+          # Wings
+          docker run -d \
+            --name pterodactyl_wings \
+            -p 8080:8080 \
+            -p 2022:2022 \
+            --privileged \
+            ghcr.io/${{ github.repository }}/wings:latest
+          ```
+
+          ### 🔗 Links
+          - [Pterodactyl Panel v${{ steps.version.outputs.panel_version }}](https://github.com/pterodactyl/panel/releases/tag/v${{ steps.version.outputs.panel_version }})
+          - [Pterodactyl Wings v${{ steps.version.outputs.wings_version }}](https://github.com/pterodactyl/wings/releases/tag/v${{ steps.version.outputs.wings_version }})
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.release_version }}
+          name: Release ${{ steps.version.outputs.release_version }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
