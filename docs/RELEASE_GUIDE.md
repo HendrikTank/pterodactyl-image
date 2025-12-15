@@ -111,16 +111,16 @@ Each release creates multiple tags:
 
 ```bash
 # Pull specific version
-docker pull ghcr.io/hendrictank/pterodactyl-image/panel:1.0.0
+docker pull ghcr.io/<username>/<repo>/panel:1.0.0
 
 # Pull latest
-docker pull ghcr.io/hendrictank/pterodactyl-image/panel:latest
+docker pull ghcr.io/<username>/<repo>/panel:latest
 
 # Pull by Pterodactyl version
-docker pull ghcr.io/hendrictank/pterodactyl-image/panel:1.11.6
+docker pull ghcr.io/<username>/<repo>/panel:1.11.6
 
 # From Docker Hub (if configured)
-docker pull hendrictank/pterodactyl-image/panel:latest
+docker pull <username>/panel:latest
 ```
 
 ## Multi-Platform Support

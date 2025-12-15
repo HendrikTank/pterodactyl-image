@@ -32,20 +32,20 @@ docker compose up -d
 
 ```bash
 # Pull Panel image
-docker pull ghcr.io/hendrictank/pterodactyl-image/panel:latest
+docker pull ghcr.io/<username>/<repo>/panel:latest
 
 # Pull Wings image
-docker pull ghcr.io/hendrictank/pterodactyl-image/wings:latest
+docker pull ghcr.io/<username>/<repo>/wings:latest
 ```
 
 #### From Docker Hub (if published)
 
 ```bash
 # Pull Panel image
-docker pull hendrictank/pterodactyl-image/panel:latest
+docker pull <username>/panel:latest
 
 # Pull Wings image
-docker pull hendrictank/pterodactyl-image/wings:latest
+docker pull <username>/wings:latest
 ```
 
 ## Available Images

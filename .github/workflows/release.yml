@@ -186,20 +186,18 @@ jobs:
           EOF
 
           if [ "$PUSH_TO_DOCKERHUB" == "true" ]; then
-            cat >> release_notes.md << 'EOFHUB'
-
-          #### Docker Hub
-
-          ```bash
-          # Panel
-          docker pull ${DOCKERHUB_REPO}/panel:${{ steps.version.outputs.release_version_number }}
-          docker pull ${DOCKERHUB_REPO}/panel:latest
-
-          # Wings
-          docker pull ${DOCKERHUB_REPO}/wings:${{ steps.version.outputs.release_version_number }}
-          docker pull ${DOCKERHUB_REPO}/wings:latest
-          ```
-          EOFHUB
+            echo "" >> release_notes.md
+            echo "          #### Docker Hub" >> release_notes.md
+            echo "" >> release_notes.md
+            echo "          \`\`\`bash" >> release_notes.md
+            echo "          # Panel" >> release_notes.md
+            echo "          docker pull ${DOCKERHUB_REPO}/panel:${{ steps.version.outputs.release_version_number }}" >> release_notes.md
+            echo "          docker pull ${DOCKERHUB_REPO}/panel:latest" >> release_notes.md
+            echo "" >> release_notes.md
+            echo "          # Wings" >> release_notes.md
+            echo "          docker pull ${DOCKERHUB_REPO}/wings:${{ steps.version.outputs.release_version_number }}" >> release_notes.md
+            echo "          docker pull ${DOCKERHUB_REPO}/wings:latest" >> release_notes.md
+            echo "          \`\`\`" >> release_notes.md
           fi
 
           cat >> release_notes.md << 'EOF'

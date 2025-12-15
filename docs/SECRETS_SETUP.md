@@ -188,10 +188,10 @@ After successful release:
 
 ```bash
 # Test GHCR image
-docker pull ghcr.io/hendrictank/pterodactyl-image/panel:0.0.1
+docker pull ghcr.io/<username>/<repo>/panel:0.0.1
 
 # Test Docker Hub image (if published)
-docker pull johndoe/panel:0.0.1
+docker pull <username>/panel:0.0.1
 ```
 
 ## Additional Resources
