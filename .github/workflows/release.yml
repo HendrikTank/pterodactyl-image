@@ -47,8 +47,7 @@ jobs:
           RELEASE_VERSION_NUMBER="${RELEASE_VERSION#v}"
 
           # Determine if we should push to Docker Hub
-          if [ "${{ github.event_name }}" == "push" ] || \
-             [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ inputs.push_to_dockerhub }}" == "true" ]; then
+          if [ "${{ github.event_name }}" == "push" ] || ([ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ inputs.push_to_dockerhub }}" == "true" ]); then
             PUSH_TO_DOCKERHUB="true"
           else
             PUSH_TO_DOCKERHUB="false"
