@@ -43,10 +43,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Log in to Docker Hub
-        if: |
-          github.event_name == 'push' ||
-          (github.event_name == 'workflow_dispatch' &&
-           inputs.push_to_dockerhub == true)
+        if: steps.version.outputs.push_to_dockerhub == 'true'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -69,14 +66,24 @@ jobs:
           # Remove 'v' prefix if present
           RELEASE_VERSION_NUMBER="${RELEASE_VERSION#v}"
 
+          # Determine if we should push to Docker Hub
+          if [ "${{ github.event_name }}" == "push" ] || \
+             [ "${{ github.event_name }}" == "workflow_dispatch" -a "${{ inputs.push_to_dockerhub }}" == "true" ]; then
+            PUSH_TO_DOCKERHUB="true"
+          else
+            PUSH_TO_DOCKERHUB="false"
+          fi
+
           echo "panel_version=$PANEL_VERSION" >> $GITHUB_OUTPUT
           echo "wings_version=$WINGS_VERSION" >> $GITHUB_OUTPUT
           echo "release_version=$RELEASE_VERSION" >> $GITHUB_OUTPUT
           echo "release_version_number=$RELEASE_VERSION_NUMBER" >> $GITHUB_OUTPUT
+          echo "push_to_dockerhub=$PUSH_TO_DOCKERHUB" >> $GITHUB_OUTPUT
 
           echo "Panel version: $PANEL_VERSION"
           echo "Wings version: $WINGS_VERSION"
           echo "Release version: $RELEASE_VERSION"
+          echo "Push to Docker Hub: $PUSH_TO_DOCKERHUB"
 
       - name: Determine Docker Hub repository
         id: dockerhub
@@ -94,10 +101,7 @@ jobs:
         with:
           images: |
             ghcr.io/${{ github.repository }}/panel
-            ${{ (github.event_name == 'push' || 
-                 (github.event_name == 'workflow_dispatch' && 
-                  inputs.push_to_dockerhub == true)) && 
-                format('{0}/panel', steps.dockerhub.outputs.repo) || '' }}
+            ${{ steps.version.outputs.push_to_dockerhub == 'true' && format('{0}/panel', steps.dockerhub.outputs.repo) || '' }}
           tags: |
             type=semver,pattern={{version}},value=${{ steps.version.outputs.release_version }}
             type=semver,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.release_version }}
@@ -127,10 +131,7 @@ jobs:
         with:
           images: |
             ghcr.io/${{ github.repository }}/wings
-            ${{ (github.event_name == 'push' || 
-                 (github.event_name == 'workflow_dispatch' && 
-                  inputs.push_to_dockerhub == true)) && 
-                format('{0}/wings', steps.dockerhub.outputs.repo) || '' }}
+            ${{ steps.version.outputs.push_to_dockerhub == 'true' && format('{0}/wings', steps.dockerhub.outputs.repo) || '' }}
           tags: |
             type=semver,pattern={{version}},value=${{ steps.version.outputs.release_version }}
             type=semver,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.release_version }}
@@ -157,7 +158,7 @@ jobs:
       - name: Generate release notes
         id: release-notes
         run: |
-          PUSH_TO_DOCKERHUB="${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.push_to_dockerhub == true) }}"
+          PUSH_TO_DOCKERHUB="${{ steps.version.outputs.push_to_dockerhub }}"
           DOCKERHUB_REPO="${{ steps.dockerhub.outputs.repo }}"
 
           cat > release_notes.md << 'EOF'
