@@ -1,0 +1,35 @@
+# Environment files
+.env.local
+.env.production
+
+# Docker
+*.log
+.docker/
+
+# Temporary files
+*.tmp
+*.temp
+/tmp/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+build/
+
+# Node modules (if needed for future tooling)
+node_modules/
+
+# Sensitive data
+secrets/
+*.key
+*.pem

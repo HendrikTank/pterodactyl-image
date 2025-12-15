@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  panel:
+    build:
+      context: ./panel
+      args:
+        PANEL_VERSION: "1.11.6"
+    image: pterodactyl-panel:${PANEL_VERSION}
+    container_name: pterodactyl_panel
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    environment:
+      - PANEL_VERSION=${PANEL_VERSION}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - APP_URL=${APP_URL}
+      - APP_TIMEZONE=${APP_TIMEZONE}
+      - APP_ENV=${APP_ENV}
+      - CACHE_DRIVER=${CACHE_DRIVER}
+      - SESSION_DRIVER=${SESSION_DRIVER}
+      - QUEUE_CONNECTION=${QUEUE_CONNECTION}
+    volumes:
+      - panel_data:/app/storage
+    depends_on:
+      - database
+      - redis
+    networks:
+      - pterodactyl
+
+  wings:
+    build:
+      context: ./wings
+      args:
+        WINGS_VERSION: "${WINGS_VERSION}"
+    image: pterodactyl-wings:${WINGS_VERSION}
+    container_name: pterodactyl_wings
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "8080:8080"
+      - "2022:2022"
+    environment:
+      - WINGS_VERSION=${WINGS_VERSION}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - wings_data:/var/lib/pterodactyl
+      - wings_config:/etc/pterodactyl
+      - /tmp/pterodactyl:/tmp/pterodactyl
+    networks:
+      - pterodactyl
+
+  database:
+    image: mariadb:10.11
+    container_name: pterodactyl_database
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=${DB_DATABASE}
+      - MYSQL_USER=${DB_USERNAME}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - pterodactyl
+
+  redis:
+    image: redis:7-alpine
+    container_name: pterodactyl_redis
+    restart: unless-stopped
+    networks:
+      - pterodactyl
+
+volumes:
+  panel_data:
+    driver: local
+  wings_data:
+    driver: local
+  wings_config:
+    driver: local
+  db_data:
+    driver: local
+
+networks:
+  pterodactyl:
+    driver: bridge
