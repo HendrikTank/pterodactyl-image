@@ -48,7 +48,7 @@ jobs:
 
           # Determine if we should push to Docker Hub
           if [ "${{ github.event_name }}" == "push" ] || \
-             [ "${{ github.event_name }}" == "workflow_dispatch" -a "${{ inputs.push_to_dockerhub }}" == "true" ]; then
+             [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ inputs.push_to_dockerhub }}" == "true" ]; then
             PUSH_TO_DOCKERHUB="true"
           else
             PUSH_TO_DOCKERHUB="false"

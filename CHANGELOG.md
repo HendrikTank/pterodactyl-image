@@ -58,6 +58,6 @@ Use these sections as appropriate:
 
 ## Version History
 
-Releases are tagged and published at: https://github.com/HendrikTank/pterodactyl-image/releases
+Releases are tagged and published at: https://github.com/<username>/<repo>/releases
 
-[Unreleased]: https://github.com/HendrikTank/pterodactyl-image/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/<username>/<repo>/compare/v1.0.0...HEAD

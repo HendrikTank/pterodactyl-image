@@ -211,8 +211,8 @@ git push origin v1.0.0
 gh run watch
 
 # 5. Verify images are published
-docker pull ghcr.io/hendrictank/pterodactyl-image/panel:latest
-docker pull ghcr.io/hendrictank/pterodactyl-image/wings:latest
+docker pull ghcr.io/<username>/<repo>/panel:latest
+docker pull ghcr.io/<username>/<repo>/wings:latest
 
 # 6. Test the images
 docker compose up -d

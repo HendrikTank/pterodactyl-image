@@ -1,7 +1,7 @@
 # Pterodactyl Docker Images
 
-[![Build Docker Images](https://github.com/HendrikTank/pterodactyl-image/actions/workflows/build.yml/badge.svg)](https://github.com/HendrikTank/pterodactyl-image/actions/workflows/build.yml)
-[![Release Docker Images](https://github.com/HendrikTank/pterodactyl-image/actions/workflows/release.yml/badge.svg)](https://github.com/HendrikTank/pterodactyl-image/actions/workflows/release.yml)
+[![Build Docker Images](https://github.com/<username>/<repo>/actions/workflows/build.yml/badge.svg)](https://github.com/<username>/<repo>/actions/workflows/build.yml)
+[![Release Docker Images](https://github.com/<username>/<repo>/actions/workflows/release.yml/badge.svg)](https://github.com/<username>/<repo>/actions/workflows/release.yml)
 
 Docker images for [Pterodactyl Panel](https://github.com/pterodactyl/panel) and [Pterodactyl Wings](https://github.com/pterodactyl/wings).
 
@@ -19,8 +19,8 @@ Docker images for [Pterodactyl Panel](https://github.com/pterodactyl/panel) and 
 
 ```bash
 # Clone the repository
-git clone https://github.com/HendrikTank/pterodactyl-image.git
-cd pterodactyl-image
+git clone https://github.com/<username>/<repo>.git
+cd <repo>
 
 # Start the services
 docker compose up -d
