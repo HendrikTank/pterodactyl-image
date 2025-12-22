@@ -2,8 +2,8 @@
 FROM alpine:latest
 
 # Wings version
-ARG WINGS_VERSION=1.11.8
-ENV WINGS_VERSION=${WINGS_VERSION}
+ARG WINGS_VERSION=1.11.13
+ENV WINGS_VERSION=1.11.13
 
 LABEL maintainer="your-email@example.com"
 LABEL org.opencontainers.image.source="https://github.com/HendrikTank/pterodactyl-image"
