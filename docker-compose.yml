@@ -38,7 +38,7 @@ services:
     build:
       context: ./wings
       args:
-        WINGS_VERSION: "${WINGS_VERSION}"
+        WINGS_VERSION: "1.12.0"
     image: pterodactyl-wings:${WINGS_VERSION}
     container_name: pterodactyl_wings
     restart: unless-stopped
